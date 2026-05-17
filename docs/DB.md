@@ -10,6 +10,8 @@ Postgres on Supabase. All user-owned tables have **Row Level Security** enabled 
 - Money columns: `numeric(14,2)` for totals, `numeric(14,4)` for line-item quantity and unit price
 - Snake_case for all column names
 - All foreign keys to `auth.users(id)` cascade on delete; per-user data dies with the account
+- RLS policies wrap `auth.uid()` in `(select auth.uid())` so the planner evaluates it once per query instead of once per row ([Supabase guidance](https://supabase.com/docs/guides/database/postgres/row-level-security#call-functions-with-select))
+- `SECURITY DEFINER` functions either pin `search_path` or have `EXECUTE` revoked from `public`, `anon`, and `authenticated` so they cannot be invoked as PostgREST RPCs
 
 ## 2. Enums
 
@@ -254,7 +256,8 @@ Webhook handler does `insert ... on conflict (id) do nothing returning id` and o
 
 ```sql
 create or replace function public.tg_set_updated_at()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql
+set search_path = '' as $$
 begin
   new.updated_at := now();
   return new;
@@ -280,6 +283,10 @@ end$$;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.tg_create_profile_on_signup();
+
+-- Prevent PostgREST from exposing this SECURITY DEFINER function as an RPC.
+-- The auth.users trigger still fires; revoking EXECUTE only blocks /rest/v1/rpc calls.
+revoke execute on function public.tg_create_profile_on_signup() from public, anon, authenticated;
 ```
 
 ### 4.3 Lock paid invoices (immutable paid state)
@@ -290,7 +297,8 @@ Defense in depth on top of the RLS policies below.
 
 ```sql
 create or replace function public.tg_lock_paid_invoices()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql
+set search_path = '' as $$
 begin
   if (tg_op = 'DELETE') then
     if (old.status = 'paid') then
@@ -352,16 +360,16 @@ alter table public.invoice_line_items  enable row level security;
 ```sql
 create policy "profiles are viewable by owner"
   on public.profiles for select
-  using (id = auth.uid());
+  using (id = (select auth.uid()));
 
 create policy "profiles are insertable by owner"
   on public.profiles for insert
-  with check (id = auth.uid());
+  with check (id = (select auth.uid()));
 
 create policy "profiles are updatable by owner"
   on public.profiles for update
-  using (id = auth.uid())
-  with check (id = auth.uid());
+  using (id = (select auth.uid()))
+  with check (id = (select auth.uid()));
 ```
 
 (No delete policy — profile lifecycle follows `auth.users`.)
@@ -370,24 +378,24 @@ create policy "profiles are updatable by owner"
 
 ```sql
 create policy "clients selectable by owner"
-  on public.clients for select using (user_id = auth.uid());
+  on public.clients for select using (user_id = (select auth.uid()));
 create policy "clients insertable by owner"
-  on public.clients for insert with check (user_id = auth.uid());
+  on public.clients for insert with check (user_id = (select auth.uid()));
 create policy "clients updatable by owner"
-  on public.clients for update using (user_id = auth.uid()) with check (user_id = auth.uid());
+  on public.clients for update using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 create policy "clients deletable by owner"
-  on public.clients for delete using (user_id = auth.uid());
+  on public.clients for delete using (user_id = (select auth.uid()));
 ```
 
 ### 5.3 `invoice_counters`
 
 ```sql
 create policy "counters selectable by owner"
-  on public.invoice_counters for select using (user_id = auth.uid());
+  on public.invoice_counters for select using (user_id = (select auth.uid()));
 create policy "counters insertable by owner"
-  on public.invoice_counters for insert with check (user_id = auth.uid());
+  on public.invoice_counters for insert with check (user_id = (select auth.uid()));
 create policy "counters updatable by owner"
-  on public.invoice_counters for update using (user_id = auth.uid()) with check (user_id = auth.uid());
+  on public.invoice_counters for update using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 ```
 
 (No delete.)
@@ -399,19 +407,19 @@ Soft delete is implemented as `update ... set deleted_at = now()`. The `for dele
 ```sql
 create policy "invoices selectable by owner"
   on public.invoices for select
-  using (user_id = auth.uid());
+  using (user_id = (select auth.uid()));
 
 create policy "invoices insertable by owner"
   on public.invoices for insert
-  with check (user_id = auth.uid());
+  with check (user_id = (select auth.uid()));
 
 -- Owner can update any of their not-yet-paid invoices.
 -- The trigger blocks every update once status = 'paid'; the policy adds a USING clause
 -- so the row is invisible to UPDATE statements as soon as it is paid.
 create policy "invoices updatable by owner while not paid"
   on public.invoices for update
-  using (user_id = auth.uid() and status = 'not_paid')
-  with check (user_id = auth.uid());
+  using (user_id = (select auth.uid()) and status = 'not_paid')
+  with check (user_id = (select auth.uid()));
 ```
 
 ### 5.5 `invoice_line_items`
@@ -424,7 +432,7 @@ create policy "line items selectable by invoice owner"
   using (exists (
     select 1 from public.invoices i
      where i.id = invoice_line_items.invoice_id
-       and i.user_id = auth.uid()
+       and i.user_id = (select auth.uid())
   ));
 
 create policy "line items insertable by invoice owner"
@@ -432,7 +440,7 @@ create policy "line items insertable by invoice owner"
   with check (exists (
     select 1 from public.invoices i
      where i.id = invoice_line_items.invoice_id
-       and i.user_id = auth.uid()
+       and i.user_id = (select auth.uid())
        and i.status <> 'paid'
   ));
 
@@ -441,13 +449,13 @@ create policy "line items updatable by invoice owner"
   using (exists (
     select 1 from public.invoices i
      where i.id = invoice_line_items.invoice_id
-       and i.user_id = auth.uid()
+       and i.user_id = (select auth.uid())
        and i.status <> 'paid'
   ))
   with check (exists (
     select 1 from public.invoices i
      where i.id = invoice_line_items.invoice_id
-       and i.user_id = auth.uid()
+       and i.user_id = (select auth.uid())
   ));
 
 create policy "line items deletable by invoice owner"
@@ -455,7 +463,7 @@ create policy "line items deletable by invoice owner"
   using (exists (
     select 1 from public.invoices i
      where i.id = invoice_line_items.invoice_id
-       and i.user_id = auth.uid()
+       and i.user_id = (select auth.uid())
        and i.status <> 'paid'
   ));
 ```
@@ -476,7 +484,7 @@ create policy "invoice pdfs readable by owner"
   on storage.objects for select
   using (
     bucket_id = 'invoices'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and (storage.foldername(name))[1] = (select auth.uid())::text
   );
 
 -- Owner can upload/overwrite their own PDFs
@@ -484,21 +492,21 @@ create policy "invoice pdfs writable by owner"
   on storage.objects for insert
   with check (
     bucket_id = 'invoices'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and (storage.foldername(name))[1] = (select auth.uid())::text
   );
 
 create policy "invoice pdfs updatable by owner"
   on storage.objects for update
   using (
     bucket_id = 'invoices'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and (storage.foldername(name))[1] = (select auth.uid())::text
   );
 
 create policy "invoice pdfs deletable by owner"
   on storage.objects for delete
   using (
     bucket_id = 'invoices'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and (storage.foldername(name))[1] = (select auth.uid())::text
   );
 ```
 
@@ -535,3 +543,4 @@ auth.users (1) ────── (1) profiles
 9. `updated_at` triggers across tables
 10. RLS enable + policies for every table above
 11. Storage bucket `invoices` + storage policies
+12. Hardening: `set search_path = ''` on `tg_set_updated_at` and `tg_lock_paid_invoices`; `revoke execute` on `tg_create_profile_on_signup` from `public`, `anon`, `authenticated`

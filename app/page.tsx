@@ -1,65 +1,105 @@
-import Image from "next/image";
+import { cookies } from "next/headers";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import {
+  IconArrowRight,
+  IconFileInvoice,
+  IconCreditCard,
+  IconShieldCheck,
+} from "@tabler/icons-react";
 
-export default function Home() {
+import { Button } from "@/components/ui/button";
+import { createClient } from "@/utils/supabase/server";
+
+/**
+ * Marketing landing page. If the visitor is already signed in, bounce them
+ * straight to the dashboard.
+ */
+export default async function Home() {
+  const supabase = createClient(await cookies());
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="relative flex flex-1 flex-col bg-background">
+      {/* gradient blobs */}
+      <div className="pointer-events-none absolute -top-32 left-1/2 size-[40rem] -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
+
+      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 font-heading text-sm font-semibold"
+        >
+          <IconFileInvoice className="size-5 text-primary" />
+          Invoice Generator
+        </Link>
+        <nav className="flex items-center gap-2">
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/login">Sign in</Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/register">Get started</Link>
+          </Button>
+        </nav>
+      </header>
+
+      <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center gap-16 px-6 py-16 text-center">
+        <div className="grid max-w-2xl gap-6">
+          <h1 className="font-heading text-4xl font-medium tracking-tight sm:text-5xl">
+            Send polished invoices.
+            <br className="hidden sm:block" /> Get paid faster.
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-base text-muted-foreground sm:text-lg">
+            A focused invoicing tool for freelancers. Manage clients, generate
+            clean PDFs, attach a one-click payment link, and track every
+            invoice as paid or unpaid &mdash; all from one place.
           </p>
+          <div className="mx-auto flex flex-col gap-3 sm:flex-row">
+            <Button asChild size="lg">
+              <Link href="/register">
+                Create your account
+                <IconArrowRight />
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <Link href="/login">I already have an account</Link>
+            </Button>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        <ul className="grid w-full max-w-4xl gap-6 text-left sm:grid-cols-3">
+          <li className="grid gap-2 rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
+            <IconFileInvoice className="size-5 text-primary" />
+            <p className="font-medium">PDF invoices, ready to send</p>
+            <p className="text-sm text-muted-foreground">
+              A clean fixed layout that prints beautifully every time.
+            </p>
+          </li>
+          <li className="grid gap-2 rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
+            <IconCreditCard className="size-5 text-primary" />
+            <p className="font-medium">Stripe payment links</p>
+            <p className="text-sm text-muted-foreground">
+              Clients pay online; invoices auto-update to <em>paid</em>.
+            </p>
+          </li>
+          <li className="grid gap-2 rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
+            <IconShieldCheck className="size-5 text-primary" />
+            <p className="font-medium">Your data, only yours</p>
+            <p className="text-sm text-muted-foreground">
+              Per-row security policies on every table in the database.
+            </p>
+          </li>
+        </ul>
       </main>
+
+      <footer className="relative z-10 mx-auto w-full max-w-6xl px-6 pb-6 text-xs text-muted-foreground">
+        &copy; {new Date().getFullYear()} Invoice Generator
+      </footer>
     </div>
   );
 }
