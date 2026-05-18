@@ -14,7 +14,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { ProfileCompletionBanner } from "@/components/app-shell/profile-completion-banner";
 import { createClient } from "@/utils/supabase/server";
+import { getProfile } from "@/lib/db/profiles";
 
 export const metadata = {
   title: "Dashboard — Invoice Generator",
@@ -26,8 +28,15 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Defensive: the (app) layout already redirects unauthenticated users.
+  const profile = user ? await getProfile(supabase, user.id) : null;
+  const profileIncomplete =
+    !!profile && !profile.full_name && !profile.company_name;
+
   return (
     <div className="mx-auto grid w-full max-w-5xl gap-8">
+      {profileIncomplete && <ProfileCompletionBanner />}
+
       <div className="grid gap-2">
         <h1 className="font-heading text-2xl font-medium tracking-tight">
           Welcome back
