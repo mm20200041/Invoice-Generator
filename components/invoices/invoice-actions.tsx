@@ -188,7 +188,7 @@ export function InvoiceActions({ invoice }: InvoiceActionsProps) {
           <DialogHeader>
             <DialogTitle>Send Invoice</DialogTitle>
             <DialogDescription>
-              Send invoice {invoice.number} to the client? A copy will be BCC&apos;d to you if
+              Send invoice {invoice.number}{" "} to the client? A copy will be BCC&apos;d to you if
               enabled in settings.
             </DialogDescription>
           </DialogHeader>

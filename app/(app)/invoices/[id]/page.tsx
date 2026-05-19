@@ -4,8 +4,6 @@ import Link from "next/link"
 import { format } from "date-fns"
 import {
   IconPencil,
-  IconSend,
-  IconCheck,
   IconDownload,
   IconArrowLeft,
 } from "@tabler/icons-react"
@@ -16,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { InvoiceDetailActions } from "@/components/invoices/invoice-detail-actions"
 
 interface InvoiceDetailPageProps {
   params: Promise<{ id: string }>
@@ -76,29 +75,7 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
         </a>
 
         {!isPaid && (
-          <form
-            action={`/api/invoices/${id}/send`}
-            method="POST"
-            className="inline"
-          >
-            <Button type="submit" variant="outline">
-              <IconSend className="mr-2 h-4 w-4" />
-              Send to Client
-            </Button>
-          </form>
-        )}
-
-        {!isPaid && (
-          <form
-            action={`/api/invoices/${id}/mark-paid`}
-            method="POST"
-            className="inline"
-          >
-            <Button type="submit">
-              <IconCheck className="mr-2 h-4 w-4" />
-              Mark as Paid
-            </Button>
-          </form>
+          <InvoiceDetailActions invoiceId={id} invoiceNumber={invoice.number} />
         )}
       </div>
 

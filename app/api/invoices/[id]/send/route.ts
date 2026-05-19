@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/utils/supabase/server"
 import { resend, FROM_EMAIL } from "@/utils/resend/client"
-import { getInvoice, updateLastSent } from "@/lib/db/invoices"
+import { getInvoice, updateLastSent, listLineItems, updatePdfPath } from "@/lib/db/invoices"
 import { getProfile } from "@/lib/db/profiles"
-import { getSignedPdfUrl } from "@/lib/pdf/render"
+import { getSignedPdfUrl, generateAndUploadPdf } from "@/lib/pdf/render"
 import { format } from "date-fns"
 import type { CurrencyCode } from "@/lib/validators/profile"
 
@@ -44,9 +44,16 @@ export async function POST(
   const senderName = profile.company_name || profile.full_name || "Invoice Generator"
   const clientName = clientSnapshot.company_name || clientSnapshot.full_name || "Client"
 
-  const pdfPath = invoice.pdf_path
+  let pdfPath = invoice.pdf_path
   if (!pdfPath) {
-    return NextResponse.json({ ok: false, error: "PDF not found" }, { status: 400 })
+    try {
+      const lineItems = await listLineItems(supabase, invoiceId)
+      pdfPath = await generateAndUploadPdf(supabase, invoice, lineItems)
+      await updatePdfPath(supabase, invoiceId, pdfPath)
+    } catch (e) {
+      console.error("Failed to generate PDF:", e)
+      return NextResponse.json({ ok: false, error: "Failed to generate PDF" }, { status: 500 })
+    }
   }
 
   const signedUrl = await getSignedPdfUrl(supabase, pdfPath, 300)
