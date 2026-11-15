@@ -45,6 +45,7 @@ export type InvoiceActionInvoice = {
   id: string
   number: string
   status: "not_paid" | "paid"
+  has_client_email: boolean
 }
 
 interface InvoiceActionsProps {
@@ -135,7 +136,13 @@ export function InvoiceActions({ invoice }: InvoiceActionsProps) {
           </DropdownMenuItem>
 
           {!isPaid && (
-            <DropdownMenuItem onClick={() => setShowSend(true)}>
+            <DropdownMenuItem
+              onClick={() => setShowSend(true)}
+              disabled={!invoice.has_client_email}
+              title={
+                invoice.has_client_email ? undefined : "Client has no email address"
+              }
+            >
               <IconSend className="mr-2 h-4 w-4" />
               Send
             </DropdownMenuItem>
@@ -160,7 +167,6 @@ export function InvoiceActions({ invoice }: InvoiceActionsProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Delete Confirmation */}
       <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -182,13 +188,12 @@ export function InvoiceActions({ invoice }: InvoiceActionsProps) {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Send Confirmation */}
       <Dialog open={showSend} onOpenChange={setShowSend}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Send Invoice</DialogTitle>
             <DialogDescription>
-              Send invoice {invoice.number}{" "} to the client? A copy will be BCC&apos;d to you if
+              Send invoice {invoice.number} to the client? A copy will be BCC&apos;d to you if
               enabled in settings.
             </DialogDescription>
           </DialogHeader>
@@ -203,13 +208,13 @@ export function InvoiceActions({ invoice }: InvoiceActionsProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Mark Paid Confirmation */}
       <AlertDialog open={showMarkPaid} onOpenChange={setShowMarkPaid}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Mark as Paid?</AlertDialogTitle>
             <AlertDialogDescription>
-              Mark invoice {invoice.number} as paid? This will close any open payment links.
+              Mark invoice {invoice.number} as paid? This cannot be undone — the invoice will
+              become locked from edit and delete.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

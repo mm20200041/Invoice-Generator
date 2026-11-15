@@ -18,10 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
-import {
-  InvoiceActions,
-  type InvoiceActionInvoice,
-} from "@/components/invoices/invoice-actions"
+import { InvoiceActions } from "@/components/invoices/invoice-actions"
 
 const PAGE_SIZE = 10
 
@@ -135,7 +132,7 @@ export default async function InvoicesPage(props: {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <InvoiceActions invoice={invoice as unknown as InvoiceActionInvoice} />
+                        <InvoiceActions invoice={invoice} />
                       </TableCell>
                     </TableRow>
                   ))

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import {
   IconArrowRight,
   IconFileInvoice,
-  IconCreditCard,
+  IconMail,
   IconShieldCheck,
 } from "@tabler/icons-react";
 
@@ -56,8 +56,8 @@ export default async function Home() {
           </h1>
           <p className="text-base text-muted-foreground sm:text-lg">
             A focused invoicing tool for freelancers. Manage clients, generate
-            clean PDFs, attach a one-click payment link, and track every
-            invoice as paid or unpaid &mdash; all from one place.
+            clean PDFs, email them in one click, and track every invoice as
+            paid or unpaid &mdash; all from one place.
           </p>
           <div className="mx-auto flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg">
@@ -81,10 +81,10 @@ export default async function Home() {
             </p>
           </li>
           <li className="grid gap-2 rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
-            <IconCreditCard className="size-5 text-primary" />
-            <p className="font-medium">Stripe payment links</p>
+            <IconMail className="size-5 text-primary" />
+            <p className="font-medium">Email in one click</p>
             <p className="text-sm text-muted-foreground">
-              Clients pay online; invoices auto-update to <em>paid</em>.
+              Send the PDF to your client and mark invoices paid when you get paid.
             </p>
           </li>
           <li className="grid gap-2 rounded-2xl bg-card p-5 ring-1 ring-foreground/10">

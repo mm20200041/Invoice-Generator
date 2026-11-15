@@ -4,7 +4,6 @@ import {
   IconFileInvoice,
   IconUsers,
   IconSettings,
-  IconCreditCard,
   IconFileInvoice as IconBrand,
 } from "@tabler/icons-react";
 
@@ -19,7 +18,6 @@ const NAV: { href: string; label: string; Icon: typeof IconDashboard }[] = [
 
 const SETTINGS: { href: string; label: string; Icon: typeof IconDashboard }[] = [
   { href: "/settings/profile", label: "Profile", Icon: IconSettings },
-  { href: "/settings/payments", label: "Payments", Icon: IconCreditCard },
 ];
 
 export function Sidebar() {

@@ -75,7 +75,11 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
         </a>
 
         {!isPaid && (
-          <InvoiceDetailActions invoiceId={id} invoiceNumber={invoice.number} />
+          <InvoiceDetailActions
+            invoiceId={id}
+            invoiceNumber={invoice.number}
+            hasClientEmail={Boolean(client.email)}
+          />
         )}
       </div>
 
@@ -203,27 +207,6 @@ export default async function InvoiceDetailPage({ params }: InvoiceDetailPagePro
           </CardHeader>
           <CardContent>
             <p className="whitespace-pre-line text-muted-foreground">{invoice.comments}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {!isPaid && invoice.stripe_checkout_url && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Payment Link</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-2">
-              Share this link with your client for online payment:
-            </p>
-            <a
-              href={invoice.stripe_checkout_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm break-all text-primary hover:underline"
-            >
-              {invoice.stripe_checkout_url}
-            </a>
           </CardContent>
         </Card>
       )}

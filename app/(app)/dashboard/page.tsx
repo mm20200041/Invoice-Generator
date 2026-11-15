@@ -3,7 +3,6 @@ import Link from "next/link";
 import {
   IconFileInvoice,
   IconUsers,
-  IconCreditCard,
   IconArrowRight,
 } from "@tabler/icons-react";
 
@@ -44,11 +43,11 @@ export default async function DashboardPage() {
         <p className="text-sm text-muted-foreground">
           Signed in as{" "}
           <span className="font-medium text-foreground">{user?.email}</span>.
-          Authentication is wired up — invoice features are next.
+          Create invoices, send PDFs, and track what&apos;s paid.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader>
             <IconFileInvoice className="size-5 text-primary" />
@@ -82,25 +81,6 @@ export default async function DashboardPage() {
               className="inline-flex items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
             >
               Manage clients
-              <IconArrowRight className="size-4" />
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <IconCreditCard className="size-5 text-primary" />
-            <CardTitle>Payments</CardTitle>
-            <CardDescription>
-              Connect Stripe to accept online payments.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link
-              href="/settings/payments"
-              className="inline-flex items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
-            >
-              Set up payments
               <IconArrowRight className="size-4" />
             </Link>
           </CardContent>

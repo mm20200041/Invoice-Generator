@@ -26,6 +26,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 import {
   invoiceFormSchema,
@@ -60,6 +68,8 @@ interface InvoiceFormProps {
 export function InvoiceForm({ clients, defaultCurrency, defaultVatRate, invoice }: InvoiceFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [resendInvoiceId, setResendInvoiceId] = useState<string | null>(null)
+  const [isResending, setIsResending] = useState(false)
   const isEditing = !!invoice
 
   const form = useForm<InvoiceFormInput>({
@@ -93,6 +103,37 @@ export function InvoiceForm({ clients, defaultCurrency, defaultVatRate, invoice 
 
   const totals = calculateTotals(lineItems)
 
+  async function navigateAfterSave(invoiceId: string) {
+    router.push(`/invoices/${invoiceId}`)
+  }
+
+  async function handleResendConfirm() {
+    if (!resendInvoiceId) return
+    setIsResending(true)
+    try {
+      const res = await fetch(`/api/invoices/${resendInvoiceId}/send`, { method: "POST" })
+      const sendData = await res.json()
+      if (sendData.ok) {
+        toast.success("Invoice resent to client")
+      } else {
+        toast.error(sendData.error || "Failed to resend invoice")
+      }
+    } catch {
+      toast.error("Failed to resend invoice")
+    } finally {
+      setIsResending(false)
+      const id = resendInvoiceId
+      setResendInvoiceId(null)
+      await navigateAfterSave(id)
+    }
+  }
+
+  async function handleResendCancel() {
+    const id = resendInvoiceId
+    setResendInvoiceId(null)
+    if (id) await navigateAfterSave(id)
+  }
+
   async function onSubmit(data: InvoiceFormInput) {
     setIsSubmitting(true)
 
@@ -102,19 +143,11 @@ export function InvoiceForm({ clients, defaultCurrency, defaultVatRate, invoice 
 
       if (result.ok) {
         toast.success(`Invoice ${result.data.number} updated`)
-        if (result.data.wasSent) {
-          const shouldResend = confirm("Invoice was previously sent. Would you like to resend it to the client?")
-          if (shouldResend) {
-            const res = await fetch(`/api/invoices/${result.data.id}/send`, { method: "POST" })
-            const sendData = await res.json()
-            if (sendData.ok) {
-              toast.success("Invoice resent to client")
-            } else {
-              toast.error(sendData.error || "Failed to resend invoice")
-            }
-          }
+        if (result.data.shouldPromptResend) {
+          setResendInvoiceId(result.data.id)
+        } else {
+          await navigateAfterSave(result.data.id)
         }
-        router.push(`/invoices/${result.data.id}`)
       } else {
         toast.error(result.error)
       }
@@ -132,6 +165,7 @@ export function InvoiceForm({ clients, defaultCurrency, defaultVatRate, invoice 
   }
 
   return (
+    <>
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Card>
@@ -399,6 +433,32 @@ export function InvoiceForm({ clients, defaultCurrency, defaultVatRate, invoice 
         </div>
       </form>
     </Form>
+
+    <Dialog
+      open={resendInvoiceId != null}
+      onOpenChange={(open) => {
+        if (!open && !isResending) void handleResendCancel()
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Resend updated invoice?</DialogTitle>
+          <DialogDescription>
+            This invoice was previously sent. Would you like to email the updated PDF to the
+            client?
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => void handleResendCancel()} disabled={isResending}>
+            Cancel
+          </Button>
+          <Button onClick={() => void handleResendConfirm()} disabled={isResending}>
+            {isResending ? "Sending..." : "Resend"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }
 

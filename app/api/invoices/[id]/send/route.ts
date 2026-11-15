@@ -88,7 +88,7 @@ export async function POST(
 
 Please find attached invoice ${invoice.number} for ${formattedTotal}, due by ${formattedDueDate}.
 
-${invoice.stripe_checkout_url ? `You can pay online here: ${invoice.stripe_checkout_url}\n\n` : ""}If you have any questions, just reply to this email.
+If you have any questions, just reply to this email.
 
 Thanks,
 ${senderName}`

@@ -28,9 +28,14 @@ import { markInvoicePaidAction } from "@/lib/actions/invoices"
 interface InvoiceDetailActionsProps {
   invoiceId: string
   invoiceNumber: string
+  hasClientEmail: boolean
 }
 
-export function InvoiceDetailActions({ invoiceId, invoiceNumber }: InvoiceDetailActionsProps) {
+export function InvoiceDetailActions({
+  invoiceId,
+  invoiceNumber,
+  hasClientEmail,
+}: InvoiceDetailActionsProps) {
   const router = useRouter()
   const [showSend, setShowSend] = useState(false)
   const [showMarkPaid, setShowMarkPaid] = useState(false)
@@ -70,7 +75,12 @@ export function InvoiceDetailActions({ invoiceId, invoiceNumber }: InvoiceDetail
 
   return (
     <>
-      <Button variant="outline" onClick={() => setShowSend(true)}>
+      <Button
+        variant="outline"
+        onClick={() => setShowSend(true)}
+        disabled={!hasClientEmail}
+        title={hasClientEmail ? undefined : "Client has no email address"}
+      >
         <IconSend className="mr-2 h-4 w-4" />
         Send to Client
       </Button>
@@ -105,7 +115,8 @@ export function InvoiceDetailActions({ invoiceId, invoiceNumber }: InvoiceDetail
           <AlertDialogHeader>
             <AlertDialogTitle>Mark as Paid?</AlertDialogTitle>
             <AlertDialogDescription>
-              Mark invoice {invoiceNumber} as paid? This will close any open payment links.
+              Mark invoice {invoiceNumber} as paid? This cannot be undone — the invoice will
+              become locked from edit and delete.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

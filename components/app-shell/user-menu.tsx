@@ -4,7 +4,6 @@ import { useTransition } from "react";
 import Link from "next/link";
 import {
   IconLogout,
-  IconSettings,
   IconUserCircle,
 } from "@tabler/icons-react";
 
@@ -58,12 +57,6 @@ export function UserMenu({ email }: { email: string }) {
           <Link href="/settings/profile">
             <IconUserCircle />
             Profile
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/settings/payments">
-            <IconSettings />
-            Payments
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

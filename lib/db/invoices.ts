@@ -57,6 +57,7 @@ export type InvoiceListItem = Pick<
   "id" | "number" | "invoice_date" | "due_date" | "total" | "status" | "currency"
 > & {
   client_name: string | null
+  has_client_email: boolean
 }
 
 const PAGE_SIZE = 10
@@ -112,6 +113,7 @@ export async function listInvoices(
       status: row.status,
       currency: row.currency as CurrencyCode,
       client_name: clientName,
+      has_client_email: Boolean(cs.email),
     }
   })
 
@@ -329,44 +331,20 @@ export async function updateLastSent(
   supabase: SupabaseClient,
   invoiceId: string,
 ): Promise<void> {
+  const { data: invoice, error: fetchError } = await supabase
+    .from("invoices")
+    .select("version")
+    .eq("id", invoiceId)
+    .single<{ version: number }>()
+
+  if (fetchError) throw fetchError
+
   const now = new Date().toISOString()
   const { error } = await supabase
     .from("invoices")
-    .update({ last_sent_at: now })
-    .eq("id", invoiceId)
-
-  if (error) throw error
-}
-
-export async function updateStripeSession(
-  supabase: SupabaseClient,
-  invoiceId: string,
-  sessionId: string,
-  checkoutUrl: string,
-  expiresAt: string,
-): Promise<void> {
-  const { error } = await supabase
-    .from("invoices")
     .update({
-      stripe_checkout_session_id: sessionId,
-      stripe_checkout_url: checkoutUrl,
-      stripe_checkout_expires_at: expiresAt,
-    })
-    .eq("id", invoiceId)
-
-  if (error) throw error
-}
-
-export async function clearStripeSession(
-  supabase: SupabaseClient,
-  invoiceId: string,
-): Promise<void> {
-  const { error } = await supabase
-    .from("invoices")
-    .update({
-      stripe_checkout_session_id: null,
-      stripe_checkout_url: null,
-      stripe_checkout_expires_at: null,
+      last_sent_at: now,
+      last_sent_version: invoice?.version ?? null,
     })
     .eq("id", invoiceId)
 

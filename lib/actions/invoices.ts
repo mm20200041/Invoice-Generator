@@ -14,6 +14,7 @@ import {
   softDeleteInvoice,
   getInvoice,
   listLineItems,
+  markInvoicePaid,
   type SenderSnapshot,
   type ClientSnapshot,
 } from "@/lib/db/invoices"
@@ -93,7 +94,9 @@ export async function createInvoiceAction(
 export async function updateInvoiceAction(
   invoiceId: string,
   raw: InvoiceFormInput,
-): Promise<ActionResult<{ id: string; number: string; wasSent: boolean }>> {
+): Promise<
+  ActionResult<{ id: string; number: string; shouldPromptResend: boolean }>
+> {
   const cookieStore = await cookies()
   const supabase = createClient(cookieStore)
 
@@ -145,7 +148,7 @@ export async function updateInvoiceAction(
     vat_id: client.vat_id,
   }
 
-  const wasSent = !!existing.last_sent_at
+  const previousSentVersion = existing.last_sent_version
 
   try {
     const invoice = await updateInvoice(supabase, invoiceId, {
@@ -162,9 +165,20 @@ export async function updateInvoiceAction(
     const lineItems = await listLineItems(supabase, invoice.id)
     await generateAndUploadPdf(supabase, invoice, lineItems)
 
+    // Prompt only on the first save after the previous send (Tech §10).
+    const shouldPromptResend =
+      previousSentVersion != null && invoice.version === previousSentVersion + 1
+
     revalidatePath("/invoices")
     revalidatePath(`/invoices/${invoiceId}`)
-    return { ok: true, data: { id: invoice.id, number: invoice.number, wasSent } }
+    return {
+      ok: true,
+      data: {
+        id: invoice.id,
+        number: invoice.number,
+        shouldPromptResend,
+      },
+    }
   } catch (err) {
     console.error("Failed to update invoice:", err)
     return { ok: false, error: "Failed to update invoice" }
@@ -230,19 +244,6 @@ export async function markInvoicePaidAction(
   }
 
   try {
-    const { markInvoicePaid, clearStripeSession } = await import("@/lib/db/invoices")
-
-    if (existing.stripe_checkout_session_id) {
-      const Stripe = (await import("stripe")).default
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-04-22.dahlia" })
-      try {
-        await stripe.checkout.sessions.expire(existing.stripe_checkout_session_id)
-      } catch {
-        // ignore if already expired or session not found
-      }
-      await clearStripeSession(supabase, invoiceId)
-    }
-
     await markInvoicePaid(supabase, invoiceId)
 
     revalidatePath("/invoices")

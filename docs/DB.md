@@ -1,6 +1,8 @@
 # Invoice Generator — Database Schema
 
-Postgres on Supabase. All user-owned tables have **Row Level Security** enabled with policies keyed on `auth.uid()`. The Stripe webhook is the only code path that uses the service-role key to bypass RLS.
+Postgres on Supabase. All user-owned tables have **Row Level Security** enabled with policies keyed on `auth.uid()`.
+
+> **v1 note:** Stripe-related columns and `stripe_webhook_events` are **reserved for a future release**. The v1 application does not read or write them (no online payment links). Do not drop them from an already-applied schema without a dedicated migration later.
 
 ## 1. Conventions
 
@@ -44,7 +46,7 @@ create table public.profiles (
   default_currency         currency_code not null default 'EUR',
   bcc_on_send              boolean       not null default true,
 
-  -- Stripe Connect state (synced by webhook)
+  -- Reserved for future Stripe Connect (unused in v1)
   stripe_account_id        text unique,
   stripe_charges_enabled   boolean not null default false,
   stripe_payouts_enabled   boolean not null default false,
@@ -140,7 +142,7 @@ create table public.invoices (
   last_sent_version           int,
   last_sent_at                timestamptz,
 
-  -- Stripe
+  -- Reserved for future Stripe Checkout (unused in v1)
   stripe_checkout_session_id  text,
   stripe_checkout_url         text,
   stripe_checkout_expires_at  timestamptz,
@@ -203,7 +205,7 @@ create table public.invoice_line_items (
   unit_price     numeric(14,4) not null,
   vat_rate       numeric(5,2)  not null default 0,
 
-  -- Computed at write time and persisted (matches what the PDF and Stripe see)
+  -- Computed at write time and persisted (matches what the PDF shows)
   line_subtotal  numeric(14,2) not null,
   line_tax       numeric(14,2) not null,
   line_total     numeric(14,2) not null,
@@ -237,7 +239,7 @@ invoices.total     = invoices.subtotal + invoices.tax_total
 
 ### 3.6 `stripe_webhook_events`
 
-Idempotency log for Stripe events.
+Reserved for a future release. Idempotency log for Stripe events (unused in v1).
 
 ```sql
 create table public.stripe_webhook_events (
@@ -291,7 +293,7 @@ revoke execute on function public.tg_create_profile_on_signup() from public, ano
 
 ### 4.3 Lock paid invoices (immutable paid state)
 
-Once an invoice is `paid`, it is **frozen** — no further updates, no deletes, no soft-deletes, no reversion to `not_paid`. The only allowed transition is `not_paid → paid`, performed atomically by either the Stripe webhook or the manual "mark as paid" action, which also stamps `paid_at` in the same statement.
+Once an invoice is `paid`, it is **frozen** — no further updates, no deletes, no soft-deletes, no reversion to `not_paid`. The only allowed transition is `not_paid → paid`, performed atomically by the manual "mark as paid" action, which also stamps `paid_at` in the same statement.
 
 Defense in depth on top of the RLS policies below.
 
@@ -335,10 +337,10 @@ alter table public.invoices
 
 Implications:
 
-- The Stripe webhook's update statement sets `status = 'paid'` and `paid_at` in one shot; the trigger fills `paid_at` defensively if the caller forgot
+- The mark-paid update sets `status = 'paid'` and `paid_at` in one shot; the trigger fills `paid_at` defensively if the caller forgot
 - Manual "mark as paid" follows the same single-statement update pattern
 - A paid invoice cannot be soft-deleted — its `deleted_at` is locked at whatever it was when status flipped to paid (always `null` in practice, since deleting an unpaid invoice is the only soft-delete path)
-- A paid invoice cannot be edited and therefore never re-renders its PDF or replaces its Stripe session
+- A paid invoice cannot be edited and therefore never re-renders its PDF
 - The resend popup never appears for a paid invoice, because the row cannot reach the popup condition (no further saves are possible)
 
 ## 5. Row Level Security

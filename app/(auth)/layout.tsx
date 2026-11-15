@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { IconFileInvoice, IconShieldCheck, IconBolt, IconWorld } from "@tabler/icons-react";
+import { IconFileInvoice, IconShieldCheck, IconBolt, IconMail } from "@tabler/icons-react";
 
 /**
  * Split-screen auth layout (answer 8B).
@@ -41,8 +41,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             Send polished invoices and get paid faster.
           </h2>
           <p className="mt-4 max-w-md text-sm text-muted-foreground">
-            Manage clients, generate clean PDF invoices, attach a one-click
-            payment link, and track what&apos;s paid &mdash; all from one place.
+            Manage clients, generate clean PDF invoices, email them in one
+            click, and track what&apos;s paid &mdash; all from one place.
           </p>
         </div>
 
@@ -60,12 +60,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </li>
           <li className="flex items-start gap-3">
             <span className="mt-0.5 flex size-8 items-center justify-center rounded-full bg-card ring-1 ring-foreground/10">
-              <IconWorld className="size-4 text-primary" />
+              <IconMail className="size-4 text-primary" />
             </span>
             <div>
-              <p className="font-medium">Stripe-powered payment links</p>
+              <p className="font-medium">Email invoices in one click</p>
               <p className="text-muted-foreground">
-                Get paid online &mdash; auto-marks the invoice as paid.
+                PDF attached; mark paid when payment lands outside the app.
               </p>
             </div>
           </li>

@@ -6,9 +6,8 @@ Invoice Generator is a web application for freelancers to create, store, and sen
 
 - Manage their own client list
 - Generate invoices as PDFs
-- Generate a payment link for each invoice
-- Send the invoice and payment link to the client by email
-- Track each invoice as **paid** or **not paid**
+- Send the invoice PDF to the client by email
+- Track each invoice as **paid** or **not paid** (manually)
 
 The application is single-tenant per user. There are no organizations, teams, or branding customization. Each user manages only their own profile, clients, invoices, and PDFs.
 
@@ -20,8 +19,8 @@ Provide a fast, opinionated invoicing tool where, from a single place, a freelan
 2. Add and manage clients
 3. Create an invoice using a fixed layout
 4. Generate a PDF
-5. Generate a payment link for that invoice
-6. Send everything to the client in one click
+5. Send the PDF to the client in one click
+6. Mark the invoice paid when payment is received outside the platform
 
 ## 3. User Role
 
@@ -176,26 +175,12 @@ The only allowed transition is **not paid → paid**. Once an invoice is marked 
 - It cannot be edited
 - It cannot be deleted
 - Its PDF is frozen as-is and never regenerated
-- Its payment link is closed
 
-Status flips to paid in two ways:
-
-- Automatically, when the payment provider confirms a successful payment
-- Manually, by the user from the invoice page, when payment is received outside the platform (e.g., bank transfer)
+Status flips to paid **manually**, by the user from the invoice page, when payment is received outside the platform (e.g., bank transfer).
 
 There is no separate "draft" or "sent" status; whether an invoice has been sent is tracked silently and does not appear as a status.
 
-### 4.8 Payment Link
-
-When an invoice is created or sent, the system generates a single-use payment link tied to that exact invoice and amount.
-
-When the payment provider confirms a successful payment, the invoice status is automatically updated to **paid**. No additional payment-confirmation email is sent to the client.
-
-If the user manually marks an invoice as paid, any open payment session for that invoice is canceled to prevent the client from paying twice.
-
-If the user has not finished setting up payments, the invoice can still be created and sent — but only as PDF — with a notice that explains how to enable payment links.
-
-### 4.9 Send Invoice
+### 4.8 Send Invoice
 
 The user can send an invoice to its client in one click.
 
@@ -203,11 +188,10 @@ The email contains:
 
 - A short message in the email body (fixed system template)
 - The PDF as an attachment
-- The payment link in the body, when available
 
 The email is sent to the client's email address. If the user enabled auto-BCC, the user is also BCC'd. The send button is disabled when the selected client has no email address.
 
-### 4.10 Resend Flow
+### 4.9 Resend Flow
 
 If the user edits an invoice that has already been sent, the system shows a popup asking whether to resend the updated invoice to the client.
 
@@ -265,7 +249,6 @@ There is no sharing, no team access, no admin role.
 - The application is responsive and usable on mobile and desktop
 - Forms have basic validation (required fields, numeric ranges, valid email)
 - The PDF renders consistently and is human-readable
-- Payment webhook processing is reliable and idempotent
 - Email sending has basic error handling and surfaces failures to the user
 - User data is protected by authentication and per-row access policies
 
@@ -284,10 +267,11 @@ There is no sharing, no team access, no admin role.
 - Clients list
 - Add / edit client
 - Profile / sender details settings
-- Payments setup (payment-provider onboarding status)
 
 ## 8. Out of Scope (v1)
 
+- Online payment links / Stripe Connect / payment-provider onboarding
+- Automatic status flip when a payment provider confirms payment
 - Multi-user organizations, teams, roles
 - Brand customization, logo upload, custom templates
 - OAuth or social login
