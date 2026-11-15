@@ -13,23 +13,12 @@ const optionalTrimmedString = z
   .nullable()
   .transform((v) => (v === "" ? null : v))
 
-const numberFromString = z
-  .string()
-  .or(z.number())
-  .transform((val) => (typeof val === "string" ? parseFloat(val) : val))
-
 export const lineItemSchema = z.object({
   description: trimmedString.min(1, { message: "Description is required" }),
-  quantity: numberFromString.pipe(
-    z.number().positive("Quantity must be greater than 0"),
-  ),
+  quantity: z.number().positive("Quantity must be greater than 0"),
   unit_type: z.enum(["hours", "flat"]),
-  unit_price: numberFromString.pipe(
-    z.number().min(0, "Price must be 0 or greater"),
-  ),
-  vat_rate: numberFromString.pipe(
-    z.number().min(0, "VAT rate must be 0-100").max(100, "VAT rate must be 0-100"),
-  ),
+  unit_price: z.number().min(0, "Price must be 0 or greater"),
+  vat_rate: z.number().min(0, "VAT rate must be 0-100").max(100, "VAT rate must be 0-100"),
 })
 
 export type LineItemFormInput = z.infer<typeof lineItemSchema>

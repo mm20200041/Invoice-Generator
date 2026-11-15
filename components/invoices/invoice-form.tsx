@@ -285,7 +285,12 @@ export function InvoiceForm({ clients, defaultCurrency, defaultVatRate, invoice 
                       <FormItem>
                         <FormLabel>Qty</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" {...field} />
+                          <Input
+                            type="number"
+                            step="0.01"
+                            {...field}
+                            onChange={(e) => field.onChange(e.target.value === "" ? 0 : parseFloat(e.target.value))}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -325,7 +330,12 @@ export function InvoiceForm({ clients, defaultCurrency, defaultVatRate, invoice 
                       <FormItem>
                         <FormLabel>Price</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" {...field} />
+                          <Input
+                            type="number"
+                            step="0.01"
+                            {...field}
+                            onChange={(e) => field.onChange(e.target.value === "" ? 0 : parseFloat(e.target.value))}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -341,7 +351,12 @@ export function InvoiceForm({ clients, defaultCurrency, defaultVatRate, invoice 
                       <FormItem>
                         <FormLabel>VAT %</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" {...field} />
+                          <Input
+                            type="number"
+                            step="0.01"
+                            {...field}
+                            onChange={(e) => field.onChange(e.target.value === "" ? 0 : parseFloat(e.target.value))}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
